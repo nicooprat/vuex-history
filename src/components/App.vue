@@ -2,7 +2,15 @@
 
 <template>
   <section class="todoapp">
-    <button @click="revert">revert</button>
+    <nav>
+      <span :style="cursor === -1 && 'font-weight: bold;'">0</span>
+      <button v-for="(patch, index) in history" :key="patch" :style="index === cursor && 'font-weight: bold;'" @click="travel(patch)">{{ patch }}</button>
+    </nav>
+    <nav>
+      <button @click="undo" :disabled="!canUndo">undo</button>
+      <button @click="redo" :disabled="!canRedo">redo</button>
+    </nav>
+
     <header class="header">
       <h1>todos</h1>
       <input
@@ -55,28 +63,35 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
-import TodoItem from "./TodoItem.vue";
+import { mapActions, mapState, mapGetters } from 'vuex';
+import TodoItem from './TodoItem.vue';
 
 const filters = {
   all: todos => todos,
   active: todos => todos.filter(todo => !todo.done),
-  completed: todos => todos.filter(todo => todo.done)
+  completed: todos => todos.filter(todo => todo.done),
 };
 
 export default {
   components: {
-    TodoItem
+    TodoItem,
   },
 
   data() {
     return {
-      visibility: "all",
-      filters: filters
+      visibility: 'all',
+      filters,
     };
   },
 
+  mounted() {
+    this.$store.dispatch('addTodo', 'test 1');
+    this.$store.dispatch('addTodo', 'test 2');
+  },
+
   computed: {
+    ...mapState('history', ['history', 'cursor']),
+    ...mapGetters('history', ['canUndo', 'canRedo']),
     todos() {
       return this.$store.state.todos;
     },
@@ -88,26 +103,52 @@ export default {
     },
     remaining() {
       return this.todos.filter(todo => !todo.done).length;
-    }
+    },
   },
 
   filters: {
-    pluralize: (n, w) => (n === 1 ? w : w + "s"), // (remaining, 'item')
-    capitalize: s => s.charAt(0).toUpperCase() + s.slice(1)
+    pluralize: (n, w) => (n === 1 ? w : `${w}s`), // (remaining, 'item')
+    capitalize: s => s.charAt(0).toUpperCase() + s.slice(1),
   },
 
   methods: {
-    ...mapActions(["toggleAll", "clearCompleted"]),
-    revert() {
-      this.$store.dispatch('history/revert');
-    },
+    ...mapActions(['toggleAll', 'clearCompleted']),
+    ...mapActions('history', ['undo', 'redo', 'travel']),
     addTodo(e) {
       const text = e.target.value;
       if (text.trim()) {
-        this.$store.dispatch("addTodo", text);
+        this.$store.dispatch('addTodo', text);
       }
-      e.target.value = "";
-    }
-  }
+      e.target.value = '';
+    },
+  },
 };
 </script>
+
+<style scoped>
+nav {
+  display: flex;
+  justify-content: center;
+  padding: 1em;
+}
+
+nav span,
+nav button {
+  padding: 1em;
+}
+
+nav span {
+  font-size: 1.25em;
+}
+
+nav button {
+  border: 1px solid;
+  margin-left: 1em;
+  margin-right: 1em;
+}
+
+nav button[disabled] {
+  opacity: .5;
+  border: none;
+}
+</style>
