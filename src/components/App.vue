@@ -3,7 +3,7 @@
 <template>
   <section class="todoapp">
     <nav>
-      <span :style="cursor === -1 && 'font-weight: bold;'">0</span>
+      <button @click="travel(null)" :style="cursor === -1 && 'font-weight: bold;'">0</button>
       <button v-for="(patch, index) in history" :key="patch" :style="index === cursor && 'font-weight: bold;'" @click="travel(patch)">{{ patch }}</button>
     </nav>
     <nav>

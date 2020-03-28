@@ -22,15 +22,13 @@ export default ({
         commit('WRITE', id);
         commit('SET_CURSOR', state.history.length - 1);
       },
-      revert({ state, commit, getters }, id) {
-        const patch = getters.getPatchById(id);
-        commit('REVERT', patch);
-        commit('SET_CURSOR', state.cursor - 1);
+      revert({ commit, getters }, id) {
+        commit('REVERT', getters.getPatchById(id));
+        commit('SET_CURSOR', getters.getIndexForPatchId(id) - 1);
       },
-      apply({ state, commit, getters }, id) {
-        const patch = getters.getPatchById(id);
-        commit('APPLY', patch);
-        commit('SET_CURSOR', state.cursor + 1);
+      apply({ commit, getters }, id) {
+        commit('APPLY', getters.getPatchById(id));
+        commit('SET_CURSOR', getters.getIndexForPatchId(id));
       },
       undo({ dispatch, getters }) {
         dispatch('revert', getters.getCurrentPatchId);
@@ -38,17 +36,26 @@ export default ({
       redo({ dispatch, getters }) {
         dispatch('apply', getters.getNextPatchId);
       },
-      travel({ state, dispatch }, id) {
-        const index = state.history.indexOf(id);
+      travel({ state, dispatch, getters }, id) {
+        if (!id) {
+          [...state.history]
+            .reverse()
+            .forEach(i => dispatch('revert', i));
+          return;
+        }
+        const index = getters.getIndexForPatchId(id);
         // Rewind
         if (index < state.cursor) {
-          const ids = state.history.slice(index + 1);
-          ids.reverse().forEach(i => dispatch('revert', i));
+          [...state.history]
+            .slice(index + 1)
+            .reverse()
+            .forEach(i => dispatch('revert', i));
         }
         // Fast forward
         if (index > state.cursor) {
-          const ids = state.history.slice(state.cursor + 1, index + 1);
-          ids.forEach(i => dispatch('apply', i));
+          [...state.history]
+            .slice(state.cursor + 1, index + 1)
+            .forEach(i => dispatch('apply', i));
         }
       },
     },
@@ -76,6 +83,9 @@ export default ({
       },
     },
     getters: {
+      getIndexForPatchId(state) {
+        return id => state.history.indexOf(id);
+      },
       getCurrentPatchId(state) {
         return state.history[state.cursor];
       },
