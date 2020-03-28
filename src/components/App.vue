@@ -1,42 +1,43 @@
 <style src="../assets/index.css"></style>
 
 <template>
-  <section class="todoapp">
-    <nav>
-      <button @click="travel(null)" :style="cursor === -1 && 'font-weight: bold;'">0</button>
-      <button v-for="(patch, index) in history" :key="patch" :style="index === cursor && 'font-weight: bold;'" @click="travel(patch)">{{ patch }}</button>
-    </nav>
-    <nav>
-      <button @click="undo" :disabled="!canUndo">undo</button>
-      <button @click="redo" :disabled="!canRedo">redo</button>
-    </nav>
+  <section class="todoapp" @keydown.left.prevent.stop="undo" @keydown.right.prevent.stop="redo">
+    <h1>todos</h1>
+    <div>
+      <nav>
+        <button @click="travel(null)" :class="cursor === -1 && 'active'">0</button>
+        <button v-for="(patch, index) in history" :key="patch" :class="index === cursor && 'active'" @click="travel(patch)">{{ patch }}</button>
+      </nav>
+      <nav>
+        <button @click="undo" :disabled="!canUndo">undo</button>
+        <button @click="redo" :disabled="!canRedo">redo</button>
+      </nav>
 
-    <header class="header">
-      <h1>todos</h1>
-      <input
-        class="new-todo"
-        autofocus
-        autocomplete="off"
-        placeholder="What needs to be done?"
-        @keyup.enter="addTodo"
-      >
-    </header>
+      <header class="header">
+        <input
+          class="new-todo"
+          autofocus
+          autocomplete="off"
+          placeholder="What needs to be done?"
+          @keyup.enter="addTodo"
+        >
+      </header>
 
-    <section class="main" v-show="todos.length">
-      <input
-        class="toggle-all"
-        id="toggle-all"
-        type="checkbox"
-        :checked="allChecked"
-        @change="toggleAll(!allChecked);"
-      >
-      <label for="toggle-all"></label>
-      <ul class="todo-list">
-        <TodoItem v-for="(todo, index) in filteredTodos" :key="index" :todo="todo"/>
-      </ul>
-    </section>
+      <section class="main" v-show="todos.length">
+        <input
+          class="toggle-all"
+          id="toggle-all"
+          type="checkbox"
+          :checked="allChecked"
+          @change="toggleAll(!allChecked);"
+        >
+        <label for="toggle-all"></label>
+        <ul class="todo-list">
+          <TodoItem v-for="(todo, index) in filteredTodos" :key="index" :todo="todo"/>
+        </ul>
+      </section>
 
-    <footer class="footer" v-show="todos.length">
+      <footer class="footer" v-show="todos.length">
       <span class="todo-count">
         <strong>{{ remaining }}</strong>
         {{ remaining | pluralize("item") }} left
@@ -59,6 +60,7 @@
         @click="clearCompleted"
       >Clear completed</button>
     </footer>
+    </div>
   </section>
 </template>
 
@@ -126,29 +128,86 @@ export default {
 </script>
 
 <style scoped>
+.todoapp > div {
+  background: #fff;
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 25px 50px 0 rgba(0, 0, 0, 0.1);
+  min-width: 230px;
+  max-width: 600px;
+  padding-top: 20px;
+}
+
+input::-webkit-input-placeholder {
+  font-style: italic;
+  font-weight: 300;
+  color: #e6e6e6;
+}
+
+input::-moz-placeholder {
+  font-style: italic;
+  font-weight: 300;
+  color: #e6e6e6;
+}
+
+input::input-placeholder {
+  font-style: italic;
+  font-weight: 300;
+  color: #e6e6e6;
+}
+
+h1 {
+  font-size: 100px;
+  padding: 0.5em 0;
+  margin: 0;
+  font-weight: 100;
+  text-align: center;
+  color: #c68383;
+  -webkit-text-rendering: optimizeLegibility;
+  -moz-text-rendering: optimizeLegibility;
+  text-rendering: optimizeLegibility;
+}
+
 nav {
   display: flex;
   justify-content: center;
   padding: 1em;
-}
-
-nav span,
-nav button {
-  padding: 1em;
-}
-
-nav span {
-  font-size: 1.25em;
+  font-family: monospace;
 }
 
 nav button {
-  border: 1px solid;
-  margin-left: 1em;
-  margin-right: 1em;
+  padding: .65em 1.15em;
+  border: 1px solid grey;
+  margin-left: -1px;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+nav button:not([disabled]):hover,
+nav button:not([disabled]):focus {
+  background-color: rgba(0,0,0,.1);
+}
+
+nav button.active {
+  box-shadow: 0 0 0 1px #c68383 inset, 0 0 0 1px #c68383;
+  border-color: #c68383;
+  z-index: 2;
+}
+
+nav button:first-child {
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+
+nav button:last-child {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 
 nav button[disabled] {
-  opacity: .5;
-  border: none;
+  color: grey;
+  border-color: lightgrey;
+  z-index: 0;
 }
 </style>

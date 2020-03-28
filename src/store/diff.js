@@ -31,10 +31,14 @@ export default ({
         commit('SET_CURSOR', getters.getIndexForPatchId(id));
       },
       undo({ dispatch, getters }) {
-        dispatch('revert', getters.getCurrentPatchId);
+        if (getters.canUndo) {
+          dispatch('revert', getters.getCurrentPatchId);
+        }
       },
       redo({ dispatch, getters }) {
-        dispatch('apply', getters.getNextPatchId);
+        if (getters.canRedo) {
+          dispatch('apply', getters.getNextPatchId);
+        }
       },
       travel({ state, dispatch, getters }, id) {
         if (!id) {
