@@ -21,6 +21,7 @@ export default ({
         commit('ADD_PATCH', { id, patch });
         commit('WRITE', id);
         commit('SET_CURSOR', state.history.length - 1);
+        return id;
       },
       revert({ commit, getters }, id) {
         commit('REVERT', getters.getPatchById(id));
@@ -29,6 +30,14 @@ export default ({
       apply({ commit, getters }, id) {
         commit('APPLY', getters.getPatchById(id));
         commit('SET_CURSOR', getters.getIndexForPatchId(id));
+      },
+      reapply({ dispatch, getters }, id) {
+        // Clone and override `index` to add todos at the end of the list
+        const newPatch = cloneDeep(getters.getPatchById(id)).map(patch => ({
+          ...patch,
+          ...(!isNaN(patch.index) && { index: store.state[patch.path[0]].length }),
+        }));
+        dispatch('write', newPatch).then(newId => dispatch('apply', newId));
       },
       undo({ dispatch, getters }) {
         if (getters.canUndo) {
@@ -80,10 +89,16 @@ export default ({
         }
       },
       REVERT(state, patch) {
-        patch.forEach(change => revertChange(store.state, true, change));
+        // Apply changes to a clone to mutate state only once
+        const newState = cloneDeep(store.state);
+        patch.forEach(change => revertChange(newState, true, change));
+        store.replaceState(newState);
       },
       APPLY(state, patch) {
-        patch.forEach(change => applyChange(store.state, true, change));
+        // Apply changes to a clone to mutate state only once
+        const newState = cloneDeep(store.state);
+        patch.forEach(change => applyChange(newState, true, change));
+        store.replaceState(newState);
       },
     },
     getters: {

@@ -4,9 +4,15 @@
   <section class="todoapp" @keydown.left.prevent.stop="undo" @keydown.right.prevent.stop="redo">
     <h1>todos</h1>
     <div>
+      <p><strong>Click</strong> on a patch to time travel. <strong>Alt+Click</strong> to reapply the patch.</p>
       <nav>
-        <button @click="travel(null)" :class="cursor === -1 && 'active'">0</button>
-        <button v-for="(patch, index) in history" :key="patch" :class="index === cursor && 'active'" @click="travel(patch)">{{ patch }}</button>
+        <button @click="travel" :class="cursor === -1 && 'active'">0</button>
+        <button
+          v-for="(patchId, index) in history"
+          :key="patchId"
+          :class="index === cursor && 'active'"
+          @click.exact="travel(patchId)"
+          @click.alt="reapply(patchId)">{{ patchId }}</button>
       </nav>
       <nav>
         <button @click="undo" :disabled="!canUndo">undo</button>
@@ -115,7 +121,7 @@ export default {
 
   methods: {
     ...mapActions(['toggleAll', 'clearCompleted']),
-    ...mapActions('history', ['undo', 'redo', 'travel']),
+    ...mapActions('history', ['undo', 'redo', 'travel', 'reapply']),
     addTodo(e) {
       const text = e.target.value;
       if (text.trim()) {
@@ -136,6 +142,10 @@ export default {
   min-width: 230px;
   max-width: 600px;
   padding-top: 20px;
+}
+
+p {
+  text-align: center;
 }
 
 input::-webkit-input-placeholder {
@@ -182,6 +192,7 @@ nav button {
   cursor: pointer;
   position: relative;
   z-index: 1;
+  text-transform: uppercase;
 }
 
 nav button:not([disabled]):hover,
