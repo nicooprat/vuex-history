@@ -1,6 +1,9 @@
 <script>
-import { createStore, subscribe } from '@/store/diff';
+import { uniqueId } from 'lodash';
 import { mapActions, mapState, mapGetters } from 'vuex';
+import createHistory from '@/store/diff';
+
+const id = `history-${uniqueId()}`;
 
 export default {
   props: {
@@ -13,32 +16,36 @@ export default {
       default: () => true,
     },
   },
+  // Need beforeCreate to have vuex mapped
   beforeCreate() {
-    this.$store.registerModule('history', createStore({
+    const { register, subscribe } = createHistory({
+      id,
+      store: this.$store,
       limit: this.$options.propsData.limit,
-    }));
-  },
-  created() {
-    subscribe(this.$store, this.include);
+      include: this.$options.propsData.include,
+    });
+    register();
+    this.unsubscribe = subscribe();
   },
   destroyed() {
-    this.$store.unregisterModule('history');
+    this.$store.unregisterModule(id);
+    this.unsubscribe();
   },
   computed: {
-    ...mapState('history', ['history', 'cursor']),
-    ...mapGetters('history', ['canUndo', 'canRedo']),
+    ...mapState(id, ['history', 'cursor']),
+    ...mapGetters(id, ['canUndo', 'canRedo']),
   },
   methods: {
-    ...mapActions('history', ['undo', 'redo', 'travel', 'reapply']),
+    ...mapActions(id, ['undo', 'redo', 'travel', 'reapply']),
   },
   render(h) {
     return h('div', this.$scopedSlots.default({
       history: this.history,
       cursor: this.cursor,
-      undo: this.undo,
-      redo: this.redo,
       canUndo: this.canUndo,
       canRedo: this.canRedo,
+      undo: this.undo,
+      redo: this.redo,
       travel: this.travel,
       reapply: this.reapply,
     }));

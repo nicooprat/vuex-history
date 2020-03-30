@@ -2,7 +2,7 @@ import Vue from 'vue';
 import { cloneDeep, uniqueId } from 'lodash';
 import { diff, revertChange, applyChange } from 'deep-diff';
 
-export const createStore = ({ limit = 20 } = {}) => ({
+const createStore = ({ limit = 20 } = {}) => ({
   namespaced: true,
   state: {
     patches: {},
@@ -118,16 +118,29 @@ export const createStore = ({ limit = 20 } = {}) => ({
   },
 });
 
-export const subscribe = (store, shouldInclude = () => true) => {
+const subscribe = (store, id, shouldInclude = () => true) => {
   // Watch for state changes
   let oldState = cloneDeep(store.state);
-  store.subscribe((mutation, newState) => {
-    if (!mutation.type.startsWith('history/') && shouldInclude(mutation)) {
+  return store.subscribe((mutation, newState) => {
+    if (!mutation.type.startsWith(id) && shouldInclude(mutation)) {
       const patch = diff(oldState, newState);
       if (patch) {
-        store.dispatch('history/write', patch);
+        store.dispatch(`${id}/write`, patch);
       }
     }
     oldState = cloneDeep(newState);
   });
+};
+
+export default ({
+  store,
+  limit,
+  include,
+  id,
+}) => {
+  const module = createStore(store, limit);
+  return {
+    subscribe: () => subscribe(store, id, include),
+    register: () => store.registerModule(id, module),
+  };
 };
